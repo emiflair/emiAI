@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="chat.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="chat.png">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <!-- Theme color for supported browsers -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <title>emyAI - AI Assistant</title>
+    
+    <!-- FORCE DARK THEME TEXT FIX -->
+    <style>
+        [data-theme="dark"] .bot-name {
+            color: #ffffff !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        html[data-theme="dark"] .bot-name {
+            color: #ffffff !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Settings Panel - Modal Popup -->
+        <div class="settings-panel" id="settings-panel">
+            <div class="settings-content">
+                <div class="settings-header">
+                    <h3>Settings</h3>
+                    <button class="close-settings-btn" id="close-settings-btn" aria-label="Close settings panel">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="settings-body">
+                    <div class="settings-grid">
+                        <div class="settings-group">
+                            <label>Theme</label>
+                            <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
+                                <i class="fas fa-moon"></i>
+                                <span>Dark Mode</span>
+                            </button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <label for="ai-model">AI Model</label>
+                            <select id="ai-model">
+                                <option value="emy-3.0">emy 3.0 (Fast & Efficient)</option>
+                                <option value="emy-pro">emy pro (Advanced Reasoning)</option>
+                                <option value="emy-deep-think">emy deep think (Complex Analysis)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <label for="response-length">Response Length</label>
+                            <select id="response-length">
+                                <option value="short">Short</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="long">Long</option>
+                                <option value="detailed">Very Detailed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <div class="settings-item">
+                                <label for="creativity-level">Creativity Level</label>
+                                <input type="range" id="creativity-level" class="slider" min="0" max="100" value="50" aria-label="Creativity level from 0 to 100">
+                                <span class="slider-value">50</span>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <label>Voice Settings</label>
+                            <div class="voice-settings">
+                                <button class="voice-btn" id="voice-input-btn" title="Toggle voice input">
+                                    <i class="fas fa-microphone"></i> Voice Input
+                                </button>
+                                <button class="voice-btn" id="voice-output-btn" title="Toggle voice output">
+                                    <i class="fas fa-volume-up"></i> Voice Output
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main Chat Container -->
+        <div class="chat-container">
+            <div class="header">
+                <div class="header-content">
+                    <div class="bot-info">
+                        <div class="bot-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="bot-details">
+                            <h2 class="bot-name" style="color: white !important;">emyAI</h2>
+                            <div class="model-indicator" id="model-indicator">
+                                <span class="model-selector" id="current-model">emy 3.0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-btn" id="search-btn" title="Search Chat History">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <button class="action-btn" id="export-btn" title="Export Chat">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="action-btn" id="clear-btn" title="Clear Chat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="action-btn" id="settings-btn" title="Settings">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="search-container hidden" id="search-container">
+                <input type="text" id="search-input" placeholder="Search chat history...">
+                <div class="search-actions">
+                    <button class="search-close-btn" id="search-close-btn" aria-label="Close search">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chat-log">
+                <!-- Quick Actions Bar -->
+                <div class="quick-actions-bar">
+                    <button class="quick-action-btn" data-action="explain" title="Explain something">
+                        <i class="fas fa-lightbulb"></i> Explain
+                    </button>
+                    <button class="quick-action-btn" data-action="summarize" title="Summarize text">
+                        <i class="fas fa-compress-alt"></i> Summarize
+                    </button>
+                    <button class="quick-action-btn" data-action="translate" title="Translate text">
+                        <i class="fas fa-language"></i> Translate
+                    </button>
+                    <button class="quick-action-btn" data-action="creative" title="Creative writing">
+                        <i class="fas fa-feather-alt"></i> Creative
+                    </button>
+                    <button class="quick-action-btn" data-action="analyze" title="Analyze data">
+                        <i class="fas fa-chart-line"></i> Analyze
+                    </button>
+                </div>
+                
+                <div class="welcome-message">
+                    <div class="welcome-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="welcome-content">
+                        <h3>Welcome to emyAI!</h3>
+                        <p>I'm here to help you with anything you need - programming, general knowledge, creative projects, advice, and more! I love having conversations and will always ask follow-up questions to help you further. How can I assist you today?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="typing-indicator hidden" id="typing-indicator">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span class="typing-text">emyAI is typing...</span>
+            </div>
+            
+            <div class="input-container">
+                <!-- Image Preview -->
+                <div class="image-preview-container hidden" id="image-preview-container">
+                    <div class="image-preview">
+                        <img id="preview-image" src="" alt="Preview">
+                        <button class="remove-image-btn" id="remove-image-btn" title="Remove Image">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Message Composer -->
+                <div class="input-wrapper">
+                    <!-- Main Input Area -->
+                    <div class="input-main">
+                        <textarea id="user-input" placeholder="Ask me anything - from coding to cooking, math to music..." rows="1"></textarea>
+                        
+                        <!-- Input Actions -->
+                        <div class="input-actions">
+                            <button class="attachment-btn" id="plus-btn" title="Add Content">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            
+                            <!-- Attachment Menu -->
+                            <div class="attachment-menu hidden" id="attachment-menu">
+                                <button class="attachment-option" data-type="image" title="Upload Image">
+                                    <i class="fas fa-image"></i> Image
+                                </button>
+                                <button class="attachment-option" data-type="file" title="Upload File">
+                                    <i class="fas fa-file"></i> Document
+                                </button>
+                                <button class="attachment-option" data-type="camera" title="Take Photo">
+                                    <i class="fas fa-camera"></i> Camera
+                                </button>
+                                <button class="attachment-option" data-type="code" title="Code Snippet">
+                                    <i class="fas fa-code"></i> Code
+                                </button>
+                                <button class="attachment-option" data-type="web-search" title="Web Search">
+                                    <i class="fas fa-globe"></i> Web Search
+                                </button>
+                                <button class="attachment-option" data-type="chart" title="Create Chart">
+                                    <i class="fas fa-chart-bar"></i> Chart
+                                </button>
+                                <button class="attachment-option" data-type="table" title="Create Table">
+                                    <i class="fas fa-table"></i> Table
+                                </button>
+                                <button class="attachment-option" data-type="math" title="Math Formula">
+                                    <i class="fas fa-calculator"></i> Math
+                                </button>
+                            </div>
+                            
+                            <button class="voice-record-btn" id="voice-record-btn" title="Voice Input">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button class="send-btn" id="send-btn" title="Send Message">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden File Inputs -->
+                    <input type="file" id="image-input" accept="image/*" class="hidden" aria-label="Select image to upload">
+                    <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.js,.py,.html,.css,.json,.xml" class="hidden" aria-label="Select file to upload">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Debug: Add basic console log to check if scripts are loading
+        console.log('HTML loaded successfully');
+        
+        // Debug: Check if the DOM is working
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            const appContainer = document.querySelector('.app-container');
+            if (appContainer) {
+                console.log('App container found');
+                appContainer.style.visibility = 'visible';
+            } else {
+                console.error('App container not found');
+            }
+        });
+    </script>
+    <script src="main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/contrib/auto-render.min.js"></script>
+</body>
+</html>

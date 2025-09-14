@@ -1,0 +1,34 @@
+{
+  "name": "emiai-chatbot",
+  "version": "1.0.0",
+  "description": "A modern, responsive AI chatbot with beautiful themes and voice capabilities",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "chatbot",
+    "openai",
+    "chat",
+    "assistant",
+    "voice",
+    "responsive",
+    "modern"
+  ],
+  "author": "emiflair",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emiflair/emiAI.git"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "openai": "^5.20.1"
+  }
+}
