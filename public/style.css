@@ -126,6 +126,24 @@ body {
     border-radius: 25px;
 }
 
+/* Ensure consistent input field sizing in dark theme */
+[data-theme="dark"] #user-input {
+    /* No font-size override - inherit from base and media queries */
+    color: #ffffff !important;
+    background: transparent !important;
+    /* Prevent text wrapping that causes theme inconsistency */
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+[data-theme="dark"] #user-input::placeholder {
+    /* No font-size override - inherit from base and media queries */
+    color: var(--text-light) !important;
+    /* Prevent placeholder text wrapping */
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 [data-theme="dark"] .header {
     border-radius: 30px 30px 0 0;
     background: #000000 !important;
@@ -1445,7 +1463,7 @@ html, body {
     }
     
     .bot-name {
-        font-size: 32px !important;
+        font-size: 28px !important;
         font-weight: 700 !important;
     }
     
@@ -1515,16 +1533,32 @@ html, body {
     
     /* TEXT INPUT - MUCH BIGGER AND TOUCH-FRIENDLY */
     #user-input {
-        font-size: 17px !important; /* Prevent iOS zoom */
-        line-height: 1.4 !important;
-        padding: 12px 0 !important;
-        min-height: 20px !important;
-        max-height: 100px !important;
+        font-size: 16px; /* Consistent with desktop, no iOS zoom needed */
+        line-height: 1.4;
+        padding: 12px 0;
+        min-height: 20px;
+        max-height: 100px;
     }
     
     #user-input::placeholder {
-        font-size: 17px !important;
+        font-size: 16px; /* Match input font-size */
+        color: var(--text-light);
+    }
+    
+    /* Dark theme mobile input - inherit size from base mobile rules */
+    [data-theme="dark"] #user-input {
+        color: #ffffff !important;
+        background: transparent !important;
+        /* Ensure consistent width and no word-wrap */
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    
+    [data-theme="dark"] #user-input::placeholder {
         color: var(--text-light) !important;
+        /* Prevent placeholder text wrapping */
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
     
     /* INPUT ACTIONS - VERY TIGHT SPACING ON MOBILE */
@@ -2142,7 +2176,8 @@ html, body {
     }
     
     .bot-name {
-        font-size: 16px;
+        font-size: 28px !important;
+        font-weight: 700 !important;
     }
     
     .chat-messages {
@@ -2242,45 +2277,31 @@ html, body {
         color: var(--text-secondary);
     }
     
+    /* Small mobile dark theme input - inherit from base rules */
+    [data-theme="dark"] #user-input {
+        color: #ffffff !important;
+        background: transparent !important;
+        /* Ensure consistent text behavior - no wrapping */
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    
+    [data-theme="dark"] #user-input::placeholder {
+        color: var(--text-light) !important;
+        /* Prevent placeholder text wrapping on small screens */
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    
     .input-container {
         background: rgba(0, 0, 0, 0.8);
         border-top-color: rgba(255, 255, 255, 0.1);
     }
 }
 
-/* CRITICAL: Final override for dark theme visibility */
+/* Clean dark theme bot name styling - no size overrides */
 [data-theme="dark"] .bot-name {
     color: #ffffff !important;
-    font-size: 48px !important;
-    font-weight: 800 !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.1) !important;
+    /* Font size and weight inherited from base and media queries - no overrides */
 }
-
-/* SIMPLE FIX: Make bot name white in dark theme */
-html[data-theme="dark"] .bot-name {
-    color: #ffffff !important;
-}
-
-body[data-theme="dark"] .bot-name {
-    color: #ffffff !important;
-}
-
-[data-theme="dark"] .bot-name {
-    color: #ffffff !important;
-}
-
-/* AGGRESSIVE FIX: Override everything for dark theme logo */
-html[data-theme="dark"] h2.bot-name,
-html[data-theme="dark"] .header .bot-name,
-html[data-theme="dark"] .bot-details .bot-name {
-    color: #ffffff !important;
-    text-shadow: none !important;
-}
-
-/* FINAL NUCLEAR OPTION */
-[data-theme="dark"] * {
-    --text-primary: #ffffff !important;
-}
-html[data-theme="dark"] .bot-name { color: white !important; }
