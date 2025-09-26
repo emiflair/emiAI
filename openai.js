@@ -30,24 +30,33 @@ class OpenAIAPI {
         return modelMap[emyModel] || 'gpt-3.5-turbo';
     }
 
-    static async generateResponse(userMessage, selectedModel = 'emy-pro') {
+    static async generateResponse(userMessage, selectedModel = 'emy-pro', conversationHistory = []) {
         try {
             const actualModel = this.getActualModel(selectedModel);
             
+            // Build messages array with conversation history
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are emyAI, an advanced AI assistant designed to provide comprehensive, detailed, and thorough responses. Your communication style should be:\n\n📝 **DETAILED & COMPREHENSIVE**: Always provide complete, in-depth explanations rather than brief answers. Break down complex topics into understandable sections with clear headings, bullet points, and examples.\n\n🎯 **STRUCTURED RESPONSES**: Organize your answers with:\n- Clear introductions that acknowledge the user's question\n- Well-structured main content with headings and subpoints\n- Practical examples and step-by-step explanations when relevant\n- Comprehensive conclusions that tie everything together\n\n💡 **EDUCATIONAL APPROACH**: \n- Explain not just 'what' but also 'why' and 'how'\n- Provide context and background information\n- Include multiple perspectives when applicable\n- Offer practical applications and real-world examples\n- Share tips, best practices, and potential pitfalls\n\n🚀 **ENGAGEMENT**: \n- Use emojis and formatting to make responses visually appealing\n- Include relevant analogies and comparisons\n- Provide actionable next steps\n- Always end with engaging follow-up questions or offers for additional help\n\n🔧 **EXPERTISE AREAS**: Programming, technology, business, science, creative writing, problem-solving, learning, productivity, and general knowledge. Always aim to give university-level depth while maintaining accessibility.\n\n🧠 **MEMORY & CONTEXT**: You maintain context from previous messages in the conversation. Reference earlier parts of our discussion when relevant, and build upon previous topics naturally. Show that you remember what we've discussed before.\n\nRemember: Users want detailed, ChatGPT-style responses that give them comprehensive understanding and valuable insights. Never give short or superficial answers."
+                }
+            ];
+
+            // Add conversation history (limit to last 10 exchanges to manage token count)
+            const recentHistory = conversationHistory.slice(-20); // Last 20 messages (10 exchanges)
+            messages.push(...recentHistory);
+
+            // Add current user message
+            messages.push({
+                role: "user",
+                content: userMessage
+            });
+
             const response = await openai.chat.completions.create({
                 model: actualModel,
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are EmyChatBot, a helpful and friendly AI assistant. You can help with a wide variety of topics including but not limited to: programming and technology, writing and editing, math and science, creative projects, general knowledge, advice and guidance, problem-solving, learning new skills, entertainment recommendations, and everyday questions. You're knowledgeable, patient, and always aim to provide helpful, accurate, and engaging responses. IMPORTANT: After providing your main response, always end with a relevant follow-up question or offer additional assistance to keep the conversation engaging. Examples: 'Would you like me to explain more about...?', 'Is there anything specific about this topic you'd like to dive deeper into?', 'Do you have any other questions about this?', or 'Would you like me to help you with something related to this?'"
-                    },
-                    {
-                        role: "user",
-                        content: userMessage
-                    }
-                ],
-                max_tokens: 800,
-                temperature: 0.7,
+                messages: messages,
+                max_tokens: 2500,
+                temperature: 0.8,
             });
 
             return response.choices[0].message.content.trim();
@@ -57,7 +66,7 @@ class OpenAIAPI {
         }
     }
 
-    static async generateResponseWithImage(userMessage, imageData, selectedModel = 'emy-pro') {
+    static async generateResponseWithImage(userMessage, imageData, selectedModel = 'emy-pro', conversationHistory = []) {
         try {
             const actualModel = this.getActualModel(selectedModel);
             
@@ -70,9 +79,18 @@ class OpenAIAPI {
             const messages = [
                 {
                     role: "system",
-                    content: "You are EmyChatBot, a helpful AI assistant with vision capabilities. You can analyze images and answer questions about them. You help with a wide variety of topics including visual content analysis, reading text in images, identifying objects, explaining diagrams, analyzing code screenshots, describing scenes, and much more. Be detailed and helpful in your image analysis while also being conversational and engaging. IMPORTANT: After analyzing the image and providing your main response, always end with a relevant follow-up question to keep the conversation going. Examples: 'Would you like me to explain more about what I see?', 'Do you have any specific questions about this image?', 'Is there a particular aspect you'd like me to focus on?', or 'Would you like me to help you with something related to this?'"
+                    content: "You are emyAI, an advanced AI assistant with comprehensive vision capabilities. When analyzing images, provide extremely detailed, thorough responses that include:\n\n🔍 **COMPREHENSIVE ANALYSIS**:\n- Detailed descriptions of all visual elements, objects, people, text, and scenes\n- Analysis of composition, colors, lighting, and visual style\n- Context and background information about what you observe\n- Technical analysis when relevant (code, diagrams, charts, etc.)\n\n📊 **STRUCTURED BREAKDOWN**:\n- Main subject/focus of the image\n- Supporting elements and details\n- Text content (if any) with full transcription\n- Visual relationships and layout analysis\n- Quality, resolution, and technical aspects\n\n💡 **EDUCATIONAL VALUE**:\n- Explain the significance of what you see\n- Provide context and background knowledge\n- Offer insights about techniques, methods, or concepts shown\n- Share related information that might be helpful\n- Include practical applications or implications\n\n🎯 **ACTIONABLE INSIGHTS**:\n- Suggest improvements or next steps when appropriate\n- Provide troubleshooting advice for technical images\n- Offer optimization suggestions\n- Share best practices related to the content\n\n🧠 **MEMORY & CONTEXT**: You maintain context from previous messages in the conversation. Reference earlier parts of our discussion when relevant, and build upon previous topics naturally.\n\n✨ **ENGAGEMENT**: Use clear formatting, emojis, and structure to make your analysis comprehensive yet readable. Always end with thoughtful follow-up questions that encourage deeper exploration of the topic.\n\nRemember: Provide university-level depth in your image analysis while maintaining clarity and accessibility."
                 }
             ];
+
+            // Add conversation history for context (limit to recent messages)
+            const recentHistory = conversationHistory.slice(-15); // Fewer messages for image requests due to token limits
+            // Filter out previous images to save tokens, keep only text
+            const textOnlyHistory = recentHistory.filter(msg => 
+                typeof msg.content === 'string' || 
+                (Array.isArray(msg.content) && msg.content.some(item => item.type === 'text'))
+            );
+            messages.push(...textOnlyHistory);
 
             // Create user message with image
             const userMessageContent = [
@@ -99,8 +117,8 @@ class OpenAIAPI {
                 const response = await openai.chat.completions.create({
                     model: "gpt-4-vision-preview",
                     messages: messages,
-                    max_tokens: 1000,
-                    temperature: 0.7,
+                    max_tokens: 2500,
+                    temperature: 0.8,
                 });
 
                 return response.choices[0].message.content.trim();
@@ -112,8 +130,8 @@ class OpenAIAPI {
                     const response = await openai.chat.completions.create({
                         model: "gpt-4o",
                         messages: messages,
-                        max_tokens: 1000,
-                        temperature: 0.7,
+                        max_tokens: 2500,
+                        temperature: 0.8,
                     });
                     return response.choices[0].message.content.trim();
                 } catch (gpt4oError) {

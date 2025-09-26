@@ -1,3 +1,51 @@
+// ===== SPLASH SCREEN CONTROLLER =====
+class SplashScreen {
+    constructor() {
+        this.splashElement = document.getElementById('splash-screen');
+        this.minimumDisplayTime = 2000; // Minimum 2 seconds
+        this.startTime = Date.now();
+        this.init();
+    }
+
+    init() {
+        // Hide splash screen after minimum time and when page is fully loaded
+        const hideAfterDelay = () => {
+            const elapsedTime = Date.now() - this.startTime;
+            const remainingTime = Math.max(0, this.minimumDisplayTime - elapsedTime);
+            
+            setTimeout(() => {
+                this.hideSplash();
+            }, remainingTime);
+        };
+
+        // Wait for page to be fully loaded
+        if (document.readyState === 'complete') {
+            hideAfterDelay();
+        } else {
+            window.addEventListener('load', hideAfterDelay);
+        }
+
+        // Also hide after CSS animation completes (fallback)
+        setTimeout(() => {
+            this.hideSplash();
+        }, 3200);
+    }
+
+    hideSplash() {
+        if (this.splashElement) {
+            this.splashElement.style.pointerEvents = 'none';
+            setTimeout(() => {
+                this.splashElement.style.display = 'none';
+            }, 500);
+        }
+    }
+}
+
+// Initialize splash screen immediately
+document.addEventListener('DOMContentLoaded', () => {
+    new SplashScreen();
+});
+
 // Enhanced ChatBot with comprehensive features
 class ChatBot {
     constructor() {
@@ -21,6 +69,11 @@ class ChatBot {
         this.selectedImageBase64 = null;
         this.messageHistory = [];
         
+        // Enhanced conversation memory system
+        this.conversationHistory = JSON.parse(localStorage.getItem('conversationHistory')) || [];
+        this.currentSessionId = this.generateSessionId();
+        this.maxHistoryLength = 50; // Maximum messages to keep in memory
+        
         // Bind the settings outside click handler to maintain proper reference
         this.boundSettingsOutsideClick = this.handleSettingsOutsideClick.bind(this);
         
@@ -35,6 +88,17 @@ class ChatBot {
         this.setupContextMenu();
         this.restoreLastConversation();
         this.updateSendButtonState();
+        
+        // Load conversation memory
+        this.loadConversationHistory();
+        
+        // Log memory status quietly (no popup notification)
+        const stats = this.getConversationStats();
+        if (stats.totalMessages > 0) {
+            console.log(`🧠 Memory loaded: ${stats.totalMessages} messages from previous sessions`);
+            // Show memory indicator in conversation status instead of popup
+            this.updateConversationStatus();
+        }
     }
 
     setupEventListeners() {
@@ -101,6 +165,10 @@ class ChatBot {
         const exportBtn = document.getElementById('export-btn');
         if (exportBtn) exportBtn.addEventListener('click', () => this.exportConversation());
         
+        // New chat functionality
+        const newChatBtn = document.getElementById('new-chat-btn');
+        if (newChatBtn) newChatBtn.addEventListener('click', () => this.showNewChatModal());
+        
         // Clear chat functionality  
         const clearBtn = document.getElementById('clear-btn');
         if (clearBtn) clearBtn.addEventListener('click', () => {
@@ -127,6 +195,33 @@ class ChatBot {
             this.updateCurrentModel();
         }
         
+        // Quick model selector dropdown
+        const modelSelector = document.getElementById('current-model');
+        const modelDropdown = document.getElementById('model-dropdown');
+        
+        if (modelSelector && modelDropdown) {
+            modelSelector.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleModelDropdown();
+            });
+            
+            // Handle model option clicks
+            const modelOptions = modelDropdown.querySelectorAll('.model-option');
+            modelOptions.forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const selectedModel = option.dataset.model;
+                    this.selectModel(selectedModel);
+                    this.hideModelDropdown();
+                });
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                this.hideModelDropdown();
+            });
+        }
+        
         // Voice settings
         const voiceInputBtn = document.getElementById('voice-input-btn');
         const voiceOutputBtn = document.getElementById('voice-output-btn');
@@ -142,6 +237,32 @@ class ChatBot {
             voiceOutputBtn.classList.toggle('active', this.settings.autoSpeak);
             this.saveSettings();
         });
+        
+        // Memory management buttons
+        const clearMemoryBtn = document.getElementById('clear-memory-btn');
+        const memoryStatsBtn = document.getElementById('memory-stats-btn');
+        
+        if (clearMemoryBtn) clearMemoryBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all conversation memory? This cannot be undone.')) {
+                this.clearConversationHistory();
+                this.updateMemoryDisplay();
+            }
+        });
+        
+        if (memoryStatsBtn) memoryStatsBtn.addEventListener('click', () => {
+            this.showMemoryStats();
+        });
+        
+        // New chat modal buttons
+        const closeNewChatBtn = document.getElementById('close-new-chat');
+        const continueCurrent = document.getElementById('continue-current');
+        const saveAndNew = document.getElementById('save-and-new');
+        const clearAndNew = document.getElementById('clear-and-new');
+        
+        if (closeNewChatBtn) closeNewChatBtn.addEventListener('click', () => this.hideNewChatModal());
+        if (continueCurrent) continueCurrent.addEventListener('click', () => this.hideNewChatModal());
+        if (saveAndNew) saveAndNew.addEventListener('click', () => this.saveAndStartNew());
+        if (clearAndNew) clearAndNew.addEventListener('click', () => this.clearAndStartNew());
         
         // Sidebar toggle for mobile
         this.createSidebarToggle();
@@ -164,7 +285,7 @@ class ChatBot {
             const messages = chatLog.querySelectorAll('.message');
             messages.forEach(message => {
                 message.style.animation = 'fadeOut 0.3s ease-out';
-                setTimeout(() => {
+                setTimeout(() => {  
                     message.remove();
                 }, 300);
             });
@@ -172,7 +293,23 @@ class ChatBot {
             // Reset counters and history
             this.messageCounter = 0;
             this.messageHistory = [];
+            
+            // Clear conversation memory but keep in localStorage for later sessions
+            this.conversationHistory = [];
+            this.currentSessionId = this.generateSessionId();
+            
+            // Update conversation status
+            setTimeout(() => {
+                this.updateConversationStatus();
+            }, 400);
+            
+            // Show confirmation
+            this.showNotification('Chat cleared! Starting fresh conversation.', 'success');
         }
+    }
+
+    generateSessionId() {
+        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
     createSidebarToggle() {
@@ -295,6 +432,9 @@ class ChatBot {
         if (elements.autoSpeakToggle) {
             elements.autoSpeakToggle.classList.toggle('active', this.settings.autoSpeak);
         }
+        
+        // Update memory display
+        this.updateMemoryDisplay();
     }
 
     saveSettings() {
@@ -470,6 +610,109 @@ class ChatBot {
         if (chatInput) chatInput.focus();
     }
 
+    // Enhanced message formatting with fancy fonts, emojis, and syntax highlighting
+    enhanceAIMessage(message) {
+        // First, handle code blocks with syntax highlighting
+        message = message.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+            const language = lang || 'javascript';
+            const highlightedCode = this.highlightCode(code.trim(), language);
+            return `<div class="ai-code-container">
+                <div class="ai-code-header">
+                    <span class="ai-code-language">${language.toUpperCase()}</span>
+                    <button class="ai-code-copy" onclick="chatBot.copyCode(\`${code.trim().replace(/`/g, '\\`')}\`)">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <pre class="ai-code-block"><code class="language-${language}">${highlightedCode}</code></pre>
+            </div>`;
+        });
+
+        // Handle inline code
+        message = message.replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>');
+
+        // Enhance headers with fancy styling
+        message = message.replace(/^### (.*$)/gm, '<h3 class="ai-heading-3">🔸 $1</h3>');
+        message = message.replace(/^## (.*$)/gm, '<h2 class="ai-heading-2">✨ $1</h2>');
+        message = message.replace(/^# (.*$)/gm, '<h1 class="ai-heading-1">🌟 $1</h1>');
+
+        // Enhance bullet points with fancy icons
+        message = message.replace(/^- (.*$)/gm, '<div class="ai-bullet-point">🔹 $1</div>');
+        message = message.replace(/^\* (.*$)/gm, '<div class="ai-bullet-point">⭐ $1</div>');
+        message = message.replace(/^\+ (.*$)/gm, '<div class="ai-bullet-point">➕ $1</div>');
+
+        // Enhance numbered lists
+        message = message.replace(/^(\d+)\. (.*$)/gm, '<div class="ai-numbered-item"><span class="ai-number">$1</span> $2</div>');
+
+        // Enhance bold and italic text
+        message = message.replace(/\*\*(.*?)\*\*/g, '<strong class="ai-bold">$1</strong>');
+        message = message.replace(/\*(.*?)\*/g, '<em class="ai-italic">$1</em>');
+
+        // Add special formatting for key phrases
+        message = message.replace(/(Key Features?|Important|Note|Remember|Tips?|Best Practices?)/gi, 
+            '<span class="ai-highlight-keyword">💡 $1</span>');
+        
+        message = message.replace(/(Examples?|For instance|Such as)/gi, 
+            '<span class="ai-example-keyword">📝 $1</span>');
+
+        // Convert line breaks to proper HTML
+        message = message.replace(/\n/g, '<br>');
+
+        return message;
+    }
+
+    // Advanced syntax highlighting function
+    highlightCode(code, language) {
+        const patterns = {
+            javascript: {
+                keywords: /\b(function|const|let|var|if|else|for|while|return|class|import|export|async|await|try|catch)\b/g,
+                strings: /(["'`])((?:\\.|(?!\1)[^\\])*?)\1/g,
+                comments: /(\/\/.*$|\/\*[\s\S]*?\*\/)/gm,
+                numbers: /\b\d+\.?\d*\b/g,
+                operators: /[+\-*/%=<>!&|]+/g
+            },
+            python: {
+                keywords: /\b(def|class|if|elif|else|for|while|return|import|from|try|except|with|as|pass|break|continue)\b/g,
+                strings: /(["'])((?:\\.|(?!\1)[^\\])*?)\1/g,
+                comments: /(#.*$)/gm,
+                numbers: /\b\d+\.?\d*\b/g,
+                operators: /[+\-*/%=<>!&|]+/g
+            },
+            html: {
+                tags: /(<\/?[^>]+>)/g,
+                attributes: /(\w+)=/g,
+                strings: /(["'])((?:\\.|(?!\1)[^\\])*?)\1/g
+            },
+            css: {
+                selectors: /([.#]?[\w-]+)\s*\{/g,
+                properties: /([\w-]+)\s*:/g,
+                values: /:\s*([^;]+);/g,
+                comments: /(\/\*[\s\S]*?\*\/)/g
+            }
+        };
+
+        let highlighted = code;
+        const langPatterns = patterns[language] || patterns.javascript;
+
+        // Apply syntax highlighting
+        if (langPatterns.keywords) {
+            highlighted = highlighted.replace(langPatterns.keywords, '<span class="ai-code-keyword">$1</span>');
+        }
+        if (langPatterns.strings) {
+            highlighted = highlighted.replace(langPatterns.strings, '<span class="ai-code-string">$1$2$1</span>');
+        }
+        if (langPatterns.comments) {
+            highlighted = highlighted.replace(langPatterns.comments, '<span class="ai-code-comment">$1</span>');
+        }
+        if (langPatterns.numbers) {
+            highlighted = highlighted.replace(langPatterns.numbers, '<span class="ai-code-number">$1</span>');
+        }
+        if (langPatterns.operators) {
+            highlighted = highlighted.replace(langPatterns.operators, '<span class="ai-code-operator">$1</span>');
+        }
+
+        return highlighted;
+    }
+
     displayMessage(sender, messageData) {
         const chatLog = document.getElementById('chat-log');
         if (!chatLog) return;
@@ -496,13 +739,29 @@ class ChatBot {
         messageContent.classList.add('message-content');
         
         if (typeof messageData === 'string') {
-            const formattedMessage = messageData.replace(/\n/g, '<br>');
+            let formattedMessage;
+            if (sender === 'chatbot') {
+                // Apply enhanced formatting for AI messages
+                formattedMessage = this.enhanceAIMessage(messageData);
+                messageContent.classList.add('ai-enhanced-message');
+            } else {
+                // Simple formatting for user messages
+                formattedMessage = messageData.replace(/\n/g, '<br>');
+            }
             messageContent.innerHTML = formattedMessage;
         } else {
             if (messageData.text) {
                 const textDiv = document.createElement('div');
                 textDiv.classList.add('message-text');
-                const formattedMessage = messageData.text.replace(/\n/g, '<br>');
+                let formattedMessage;
+                if (sender === 'chatbot') {
+                    // Apply enhanced formatting for AI messages
+                    formattedMessage = this.enhanceAIMessage(messageData.text);
+                    textDiv.classList.add('ai-enhanced-message');
+                } else {
+                    // Simple formatting for user messages
+                    formattedMessage = messageData.text.replace(/\n/g, '<br>');
+                }
                 textDiv.innerHTML = formattedMessage;
                 messageContent.appendChild(textDiv);
             }
@@ -574,6 +833,9 @@ class ChatBot {
         chatLog.appendChild(messageElement);
         this.scrollToBottom();
         
+        // Update conversation status
+        this.updateConversationStatus();
+        
         requestAnimationFrame(() => {
             messageElement.style.opacity = '0';
             messageElement.style.transform = 'translateY(20px)';
@@ -624,6 +886,9 @@ class ChatBot {
         const aiModelSelect = document.getElementById('ai-model');
         const selectedModel = aiModelSelect ? aiModelSelect.value : 'emy-pro';
         
+        // Add user message to conversation history
+        this.addToConversationHistory('user', messageData.text || '');
+        
         // Show faster, more responsive typing indicator
         this.showTypingIndicator();
         
@@ -632,7 +897,8 @@ class ChatBot {
             hasImage: messageData.hasImage || false,
             imageData: messageData.image || null,
             selectedModel: selectedModel,
-            customPrompt: this.settings.customPrompt
+            customPrompt: this.settings.customPrompt,
+            conversationHistory: this.conversationHistory // Include conversation history
         };
         
         // Start the request immediately with optimized settings
@@ -660,6 +926,9 @@ class ChatBot {
         .then(data => {
             this.hideTypingIndicator();
             
+            // Add AI response to conversation history
+            this.addToConversationHistory('assistant', data.chatbotResponse);
+            
             // Faster response display - reduce delay
             setTimeout(() => {
                 this.displayMessage('chatbot', data.chatbotResponse);
@@ -667,6 +936,9 @@ class ChatBot {
                 if (this.settings.autoSpeak && this.settings.voiceEnabled) {
                     this.speakText(data.chatbotResponse);
                 }
+                
+                // Save conversation history to localStorage
+                this.saveConversationHistory();
             }, 200); // Reduced from default delay
         })
         .catch(error => {
@@ -772,6 +1044,17 @@ class ChatBot {
         this.removeSelectedImage();
         this.currentEditingMessage = null;
         this.updateSendButtonState();
+        
+        // When editing, we need to truncate conversation history to this point
+        // to maintain accurate context
+        const messageIndex = this.conversationHistory.findIndex(msg => 
+            msg.role === 'user' && msg.content === this.messageHistory[this.currentEditingMessage].text
+        );
+        
+        if (messageIndex !== -1) {
+            // Remove everything after this message from conversation history
+            this.conversationHistory = this.conversationHistory.slice(0, messageIndex);
+        }
         
         this.showTypingIndicator();
         this.getChatbotResponse({
@@ -1282,7 +1565,16 @@ class ChatBot {
                 'emy-deep-think': 'emy deep think'
             };
             
-            currentModelSpan.textContent = modelNames[selectedValue] || 'emy pro';
+            // Update the model name in the dropdown button
+            const modelNameSpan = currentModelSpan.querySelector('.model-name');
+            if (modelNameSpan) {
+                modelNameSpan.textContent = modelNames[selectedValue] || 'emy pro';
+            } else {
+                currentModelSpan.textContent = modelNames[selectedValue] || 'emy pro';
+            }
+            
+            // Update dropdown selection indicators
+            this.updateDropdownSelection(selectedValue);
             
             // Add visual feedback for model capabilities
             const modelIndicator = document.getElementById('model-indicator');
@@ -1302,6 +1594,56 @@ class ChatBot {
                 }
             }
         }
+    }
+    
+    toggleModelDropdown() {
+        const dropdown = document.getElementById('model-dropdown');
+        const button = document.getElementById('current-model');
+        if (dropdown) {
+            dropdown.classList.toggle('hidden');
+            if (button) {
+                button.classList.toggle('open');
+            }
+        }
+    }
+    
+    hideModelDropdown() {
+        const dropdown = document.getElementById('model-dropdown');
+        const button = document.getElementById('current-model');
+        if (dropdown) {
+            dropdown.classList.add('hidden');
+            if (button) {
+                button.classList.remove('open');
+            }
+        }
+    }
+    
+    selectModel(modelValue) {
+        const modelSelect = document.getElementById('ai-model');
+        if (modelSelect) {
+            modelSelect.value = modelValue;
+            this.updateCurrentModel();
+            this.saveSettings();
+        }
+    }
+    
+    updateDropdownSelection(selectedValue) {
+        const modelOptions = document.querySelectorAll('.model-option');
+        modelOptions.forEach(option => {
+            if (option.dataset.model === selectedValue) {
+                option.classList.add('selected');
+                const indicator = option.querySelector('.model-indicator');
+                if (indicator) {
+                    indicator.textContent = '✓';
+                }
+            } else {
+                option.classList.remove('selected');
+                const indicator = option.querySelector('.model-indicator');
+                if (indicator) {
+                    indicator.textContent = '';
+                }
+            }
+        });
     }
 
 
@@ -1523,12 +1865,14 @@ class ChatBot {
     closeAllOverlays() {
         const settingsPanel = document.getElementById('settings-panel');
         const searchOverlay = document.getElementById('search-overlay');
+        const newChatModal = document.getElementById('new-chat-modal');
         
         if (settingsPanel && settingsPanel.classList.contains('open')) {
             settingsPanel.classList.remove('open');
             document.removeEventListener('click', this.handleSettingsOutsideClick.bind(this));
         }
         if (searchOverlay) searchOverlay.classList.remove('active');
+        if (newChatModal) newChatModal.classList.add('hidden');
         
         this.hideContextMenu();
     }
@@ -1563,6 +1907,448 @@ class ChatBot {
             setTimeout(() => {
                 this.searchResults[index].element.classList.remove('search-highlight-active');
             }, 2000);
+        }
+    }
+
+    // Copy code functionality for enhanced AI messages
+    copyCode(code) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code).then(() => {
+                // Show success feedback
+                this.showCopyFeedback();
+            }).catch(err => {
+                console.error('Failed to copy code:', err);
+                this.fallbackCopyCode(code);
+            });
+        } else {
+            this.fallbackCopyCode(code);
+        }
+    }
+
+    fallbackCopyCode(code) {
+        const textArea = document.createElement('textarea');
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            this.showCopyFeedback();
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+        }
+        document.body.removeChild(textArea);
+    }
+
+    showCopyFeedback() {
+        // Create and show a temporary success message
+        const feedback = document.createElement('div');
+        feedback.className = 'copy-feedback';
+        feedback.innerHTML = '✅ Code copied to clipboard!';
+        feedback.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            z-index: 10000;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease;
+        `;
+        
+        document.body.appendChild(feedback);
+        
+        setTimeout(() => {
+            feedback.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                document.body.removeChild(feedback);
+            }, 300);
+        }, 2000);
+    }
+
+    // ===== CONVERSATION MEMORY SYSTEM =====
+    
+    addToConversationHistory(role, content) {
+        const message = {
+            role: role, // 'user' or 'assistant'
+            content: content,
+            timestamp: new Date().toISOString(),
+            sessionId: this.currentSessionId
+        };
+        
+        this.conversationHistory.push(message);
+        
+        // Maintain maximum history length for performance
+        if (this.conversationHistory.length > this.maxHistoryLength) {
+            this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength);
+        }
+    }
+
+    saveConversationHistory() {
+        try {
+            localStorage.setItem('conversationHistory', JSON.stringify(this.conversationHistory));
+        } catch (error) {
+            console.warn('Failed to save conversation history to localStorage:', error);
+            // If localStorage is full, clear old history and try again
+            if (error.name === 'QuotaExceededError') {
+                this.conversationHistory = this.conversationHistory.slice(-20); // Keep only last 20 messages
+                try {
+                    localStorage.setItem('conversationHistory', JSON.stringify(this.conversationHistory));
+                } catch (retryError) {
+                    console.error('Failed to save even reduced conversation history:', retryError);
+                }
+            }
+        }
+    }
+
+    loadConversationHistory() {
+        try {
+            const saved = localStorage.getItem('conversationHistory');
+            if (saved) {
+                this.conversationHistory = JSON.parse(saved);
+                
+                // Clean up old sessions (keep only last 7 days)
+                const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                this.conversationHistory = this.conversationHistory.filter(msg => 
+                    new Date(msg.timestamp) > weekAgo
+                );
+                
+                // Save the cleaned history back
+                this.saveConversationHistory();
+            }
+        } catch (error) {
+            console.warn('Failed to load conversation history:', error);
+            this.conversationHistory = [];
+        }
+    }
+
+    getRecentConversationHistory(limit = 20) {
+        // Return recent messages formatted for OpenAI API
+        return this.conversationHistory
+            .slice(-limit)
+            .map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }));
+    }
+
+    clearConversationHistory() {
+        this.conversationHistory = [];
+        this.currentSessionId = this.generateSessionId();
+        localStorage.removeItem('conversationHistory');
+        this.showNotification('Conversation memory cleared!', 'success');
+    }
+
+    getConversationStats() {
+        const stats = {
+            totalMessages: this.conversationHistory.length,
+            userMessages: this.conversationHistory.filter(m => m.role === 'user').length,
+            assistantMessages: this.conversationHistory.filter(m => m.role === 'assistant').length,
+            currentSession: this.conversationHistory.filter(m => m.sessionId === this.currentSessionId).length,
+            oldestMessage: this.conversationHistory[0]?.timestamp,
+            newestMessage: this.conversationHistory[this.conversationHistory.length - 1]?.timestamp
+        };
+        
+        return stats;
+    }
+
+    updateMemoryDisplay() {
+        const memoryInfo = document.getElementById('memory-info');
+        if (memoryInfo) {
+            const stats = this.getConversationStats();
+            const memoryStats = memoryInfo.querySelector('.memory-stats');
+            
+            if (stats.totalMessages === 0) {
+                memoryStats.textContent = '🧠 No conversation history stored';
+            } else {
+                memoryStats.innerHTML = `
+                    <div>🧠 ${stats.totalMessages} messages in memory</div>
+                    <div>💬 ${stats.currentSession} messages this session</div>
+                `;
+            }
+        }
+    }
+
+    showMemoryStats() {
+        const stats = this.getConversationStats();
+        
+        let message = `📊 **Memory Statistics**\n\n`;
+        message += `🧠 Total Messages: ${stats.totalMessages}\n`;
+        message += `👤 User Messages: ${stats.userMessages}\n`;
+        message += `🤖 AI Messages: ${stats.assistantMessages}\n`;
+        message += `💬 Current Session: ${stats.totalMessages - stats.currentSession} previous + ${stats.currentSession} current\n\n`;
+        
+        if (stats.oldestMessage) {
+            const oldestDate = new Date(stats.oldestMessage).toLocaleDateString();
+            const newestDate = new Date(stats.newestMessage).toLocaleDateString();
+            message += `📅 Memory Span: ${oldestDate} - ${newestDate}\n`;
+        }
+        
+        message += `\n💡 **Memory Features:**\n`;
+        message += `• I remember our conversations across sessions\n`;
+        message += `• Context is maintained for relevant responses\n`;
+        message += `• Memory is automatically cleaned after 7 days\n`;
+        message += `• Maximum 50 messages kept for performance\n`;
+        
+        // Create a nice popup instead of basic alert
+        this.showMemoryStatsModal(message);
+    }
+
+    showMemoryStatsModal(content) {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'memory-stats-overlay';
+        
+        // Create modal content
+        const modal = document.createElement('div');
+        modal.className = 'memory-stats-modal';
+        
+        const header = document.createElement('div');
+        header.className = 'memory-stats-header';
+        header.innerHTML = `
+            <h3>🧠 Memory Statistics</h3>
+            <button class="close-memory-stats" aria-label="Close">&times;</button>
+        `;
+        
+        const body = document.createElement('div');
+        body.className = 'memory-stats-body';
+        body.innerHTML = content.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        modal.appendChild(header);
+        modal.appendChild(body);
+        overlay.appendChild(modal);
+        
+        // Add styles
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        `;
+        
+        modal.style.cssText = `
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        `;
+        
+        header.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-light);
+        `;
+        
+        body.style.cssText = `
+            line-height: 1.6;
+            font-size: 0.95rem;
+        `;
+        
+        // Close functionality
+        const closeBtn = modal.querySelector('.close-memory-stats');
+        const closeModal = () => {
+            overlay.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => document.body.removeChild(overlay), 300);
+        };
+        
+        closeBtn.onclick = closeModal;
+        overlay.onclick = (e) => {
+            if (e.target === overlay) closeModal();
+        };
+        
+        document.body.appendChild(overlay);
+    }
+
+    // ===== NEW CHAT FUNCTIONALITY =====
+    
+    showNewChatModal() {
+        const modal = document.getElementById('new-chat-modal');
+        const messageCountSpan = document.getElementById('message-count');
+        
+        if (modal && messageCountSpan) {
+            // Update message count
+            const currentMessages = document.querySelectorAll('.message').length;
+            messageCountSpan.textContent = currentMessages;
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            
+            // Close on overlay click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.hideNewChatModal();
+                }
+            });
+        }
+    }
+    
+    hideNewChatModal() {
+        const modal = document.getElementById('new-chat-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+    
+    saveAndStartNew() {
+        // Save current conversation to history
+        this.saveCurrentConversationToHistory();
+        
+        // Start new chat but keep memory
+        this.startNewChat(false); // false = keep memory
+        
+        this.hideNewChatModal();
+        this.showNotification('💾 Current chat saved! Starting fresh conversation with memory intact.', 'success');
+    }
+    
+    clearAndStartNew() {
+        // Confirm action
+        if (confirm('This will permanently clear all conversation memory. Are you sure?')) {
+            // Start completely fresh
+            this.startNewChat(true); // true = clear memory
+            
+            this.hideNewChatModal();
+            this.showNotification('🆕 Started completely fresh! All memory cleared.', 'success');
+        }
+    }
+    
+    saveCurrentConversationToHistory() {
+        const chatLog = document.getElementById('chat-log');
+        if (!chatLog) return;
+        
+        const messages = Array.from(chatLog.querySelectorAll('.message')).map(msg => {
+            const isUser = msg.classList.contains('user');
+            const content = msg.querySelector('.message-content').textContent.trim();
+            const timestamp = msg.querySelector('.message-timestamp')?.textContent || new Date().toLocaleTimeString();
+            
+            return {
+                sender: isUser ? 'user' : 'chatbot',
+                content: content,
+                timestamp: timestamp
+            };
+        });
+        
+        if (messages.length > 0) {
+            const conversation = {
+                id: Date.now().toString(),
+                title: this.generateConversationTitle(messages),
+                date: new Date().toISOString(),
+                messages: messages,
+                messageCount: messages.length
+            };
+            
+            // Add to conversations list
+            this.conversations.unshift(conversation);
+            
+            // Keep only last 20 conversations to save storage
+            if (this.conversations.length > 20) {
+                this.conversations = this.conversations.slice(0, 20);
+            }
+            
+            this.saveConversations();
+            this.loadConversations();
+        }
+    }
+    
+    generateConversationTitle(messages) {
+        if (messages.length === 0) return 'Empty Conversation';
+        
+        // Get first user message
+        const firstUserMessage = messages.find(m => m.sender === 'user');
+        if (firstUserMessage) {
+            // Extract first 50 characters and clean up
+            let title = firstUserMessage.content.substring(0, 50).trim();
+            
+            // Remove common prefixes
+            title = title.replace(/^(how|what|why|when|where|can|could|would|should|tell me|explain|help me with)/i, '');
+            title = title.trim();
+            
+            // Clean up and add ellipsis if needed
+            if (title.length > 30) {
+                title = title.substring(0, 30).trim() + '...';
+            }
+            
+            return title || 'New Conversation';
+        }
+        
+        return 'New Conversation';
+    }
+    
+    startNewChat(clearMemory = false) {
+        // Clear the chat display
+        const chatLog = document.getElementById('chat-log');
+        if (chatLog) {
+            const messages = chatLog.querySelectorAll('.message');
+            messages.forEach(message => {
+                message.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => {
+                    if (message.parentNode) {
+                        message.remove();
+                    }
+                }, 300);
+            });
+        }
+        
+        // Reset counters and message history
+        this.messageCounter = 0;
+        this.messageHistory = [];
+        
+        if (clearMemory) {
+            // Clear all memory
+            this.conversationHistory = [];
+            localStorage.removeItem('conversationHistory');
+        } else {
+            // Keep memory but start new session
+            this.currentSessionId = this.generateSessionId();
+        }
+        
+        // Focus on input
+        // Update conversation status
+        this.updateConversationStatus();
+        
+        setTimeout(() => {
+            const userInput = document.getElementById('user-input');
+            if (userInput) {
+                userInput.focus();
+            }
+        }, 500);
+    }
+    
+    updateConversationStatus() {
+        const statusElement = document.getElementById('conversation-status');
+        const messageIndicator = document.getElementById('message-indicator');
+        
+        if (statusElement && messageIndicator) {
+            const messageCount = document.querySelectorAll('.message').length;
+            
+            if (messageCount === 0) {
+                statusElement.classList.add('hidden');
+            } else {
+                statusElement.classList.remove('hidden');
+                messageIndicator.textContent = `${messageCount} message${messageCount !== 1 ? 's' : ''}`;
+                
+                // Add pulse animation
+                statusElement.classList.add('updated');
+                setTimeout(() => {
+                    statusElement.classList.remove('updated');
+                }, 500);
+            }
         }
     }
 }

@@ -25,16 +25,16 @@ app.get('/health', (req, res) => {
 
 app.post('/getChatbotResponse', async (req, res) => {
     try {
-        const { userMessage, hasImage, imageData, selectedModel } = req.body;
+        const { userMessage, hasImage, imageData, selectedModel, conversationHistory = [] } = req.body;
 
         let chatbotResponse;
         
         if (hasImage && imageData) {
-            // Use OpenAI Vision API to analyze the image
-            chatbotResponse = await OpenAIAPI.generateResponseWithImage(userMessage, imageData, selectedModel);
+            // Use OpenAI Vision API to analyze the image with conversation context
+            chatbotResponse = await OpenAIAPI.generateResponseWithImage(userMessage, imageData, selectedModel, conversationHistory);
         } else {
-            // Use regular text-only API
-            chatbotResponse = await OpenAIAPI.generateResponse(userMessage, selectedModel);
+            // Use regular text-only API with conversation context
+            chatbotResponse = await OpenAIAPI.generateResponse(userMessage, selectedModel, conversationHistory);
         }
 
         // Send the response back to the client

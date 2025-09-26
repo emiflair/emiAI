@@ -34,6 +34,24 @@
     </style>
 </head>
 <body>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <img src="emyAI.png" alt="emyAI" class="splash-logo-img">
+                <div class="splash-pulse-ring"></div>
+                <div class="splash-pulse-ring-2"></div>
+            </div>
+            <h1 class="splash-title">emyAI</h1>
+            <p class="splash-subtitle">AI Assistant</p>
+            <div class="splash-loader">
+                <div class="splash-dot"></div>
+                <div class="splash-dot"></div>
+                <div class="splash-dot"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Settings Panel - Modal Popup -->
         <div class="settings-panel" id="settings-panel">
@@ -92,10 +110,66 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div class="settings-group">
+                            <label>Memory & History</label>
+                            <div class="memory-settings">
+                                <div class="memory-info" id="memory-info">
+                                    <span class="memory-stats">Loading memory stats...</span>
+                                </div>
+                                <button class="memory-btn danger" id="clear-memory-btn" title="Clear conversation memory">
+                                    <i class="fas fa-brain"></i> Clear Memory
+                                </button>
+                                <button class="memory-btn" id="memory-stats-btn" title="View detailed memory statistics">
+                                    <i class="fas fa-chart-bar"></i> Memory Stats
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- New Chat Modal -->
+        <div class="new-chat-modal-overlay hidden" id="new-chat-modal">
+            <div class="new-chat-modal">
+                <div class="new-chat-header">
+                    <h3><i class="fas fa-plus-circle"></i> Start New Chat</h3>
+                    <button class="close-new-chat" id="close-new-chat">&times;</button>
+                </div>
+                <div class="new-chat-body">
+                    <p>You have an ongoing conversation with <span id="message-count">0</span> messages.</p>
+                    <p>What would you like to do?</p>
+                    
+                    <div class="new-chat-options">
+                        <button class="new-chat-option" id="continue-current">
+                            <i class="fas fa-arrow-right"></i>
+                            <div>
+                                <h4>Continue Current Chat</h4>
+                                <p>Keep the conversation going with full memory</p>
+                            </div>
+                        </button>
+                        
+                        <button class="new-chat-option" id="save-and-new">
+                            <i class="fas fa-save"></i>
+                            <div>
+                                <h4>Save & Start New</h4>
+                                <p>Save current chat and start fresh (keeps memory)</p>
+                            </div>
+                        </button>
+                        
+                        <button class="new-chat-option danger" id="clear-and-new">
+                            <i class="fas fa-trash-alt"></i>
+                            <div>
+                                <h4>Clear & Start New</h4>
+                                <p>Clear everything and start completely fresh</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Chat Container -->
         <div class="chat-container">
             <div class="header">
@@ -107,11 +181,49 @@
                         <div class="bot-details">
                             <h2 class="bot-name">emyAI</h2>
                             <div class="model-indicator" id="model-indicator">
-                                <span class="model-selector" id="current-model">emy 3.0</span>
+                                <button class="model-selector" id="current-model" title="Click to change AI model">
+                                    <span class="model-name">emy 3.0</span>
+                                    <i class="fas fa-chevron-down model-dropdown-icon"></i>
+                                </button>
+                                
+                                <!-- Quick Model Selector Dropdown -->
+                                <div class="model-dropdown hidden" id="model-dropdown">
+                                    <div class="model-option" data-model="emy-3.0">
+                                        <div class="model-info">
+                                            <div class="model-title">🚀 emy 3.0</div>
+                                            <div class="model-desc">Fast & Efficient</div>
+                                        </div>
+                                        <div class="model-speed">⚡ Quick</div>
+                                        <div class="model-indicator"></div>
+                                    </div>
+                                    <div class="model-option" data-model="emy-pro">
+                                        <div class="model-info">
+                                            <div class="model-title">🧠 emy pro</div>
+                                            <div class="model-desc">Advanced Reasoning</div>
+                                        </div>
+                                        <div class="model-speed">⚖️ Balanced</div>
+                                        <div class="model-indicator">✓</div>
+                                    </div>
+                                    <div class="model-option" data-model="emy-deep-think">
+                                        <div class="model-info">
+                                            <div class="model-title">🤔 emy deep think</div>
+                                            <div class="model-desc">Complex Analysis</div>
+                                        </div>
+                                        <div class="model-speed">🎯 Thorough</div>
+                                        <div class="model-indicator"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="conversation-status hidden" id="conversation-status">
+                                <i class="fas fa-comments"></i>
+                                <span id="message-indicator">0 messages</span>
                             </div>
                         </div>
                     </div>
                     <div class="header-actions">
+                        <button class="action-btn new-chat-btn" id="new-chat-btn" title="Start New Chat">
+                            <i class="fas fa-plus"></i>
+                        </button>
                         <button class="action-btn" id="search-btn" title="Search Chat History">
                             <i class="fas fa-search"></i>
                         </button>
