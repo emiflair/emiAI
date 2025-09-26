@@ -9,20 +9,26 @@
   "orientation": "portrait-primary",
   "icons": [
     {
+      "src": "emyAI.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "emyAI.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "emyai-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "emyai-icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "emyai-icon-192.png",
-      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     }
@@ -37,7 +43,7 @@
       "short_name": "Chat",
       "description": "Start a new conversation with emyAI",
       "url": "/",
-      "icons": [{ "src": "emyai-icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "emyAI.png", "sizes": "1024x1024" }]
     }
   ]
 }
