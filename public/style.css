@@ -1452,12 +1452,11 @@ html, body {
     align-items: flex-end !important;
 }
 
-/* AI messages align to the left with space for avatar */
+/* AI messages align to the left */
 .message.chatbot {
     justify-content: flex-start !important;
     flex-direction: column !important;
     align-items: flex-start !important;
-    padding-left: 40px !important;
 }
 
 @keyframes messageSlide {
