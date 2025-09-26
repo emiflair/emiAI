@@ -6,6 +6,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "docker:build": "docker build -t emiai-chatbot .",
+    "docker:run": "docker run -p 3000:3000 -v $(pwd)/config.js:/app/config.js:ro emiai-chatbot",
+    "docker:up": "docker-compose up",
+    "docker:up:build": "docker-compose up --build",
+    "docker:up:d": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

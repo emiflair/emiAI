@@ -1,9 +1,23 @@
 const { OpenAI } = require('openai');
-const { OpenAIAPIKey } = require('./config'); // Create config.js with your API key
 
-const openai = new OpenAI({
-    apiKey: OpenAIAPIKey,
-});
+// Load API key from environment first; fallback to optional local config.js
+let config;
+try {
+    // config.js should export an object like { openaiApiKey: '...' }
+    // It's optional when using environment variables.
+    // eslint-disable-next-line import/no-unresolved, global-require
+    config = require('./config');
+} catch (_) {
+    config = undefined;
+}
+
+const apiKey = process.env.OPENAI_API_KEY || config?.openaiApiKey;
+if (!apiKey) {
+    // Provide a clear error early; container logs will show this if missing
+    throw new Error('Missing OpenAI API key. Set OPENAI_API_KEY env var or provide openaiApiKey in config.js');
+}
+
+const openai = new OpenAI({ apiKey });
 
 class OpenAIAPI {
     // Map emy models to actual OpenAI models

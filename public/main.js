@@ -6,7 +6,7 @@ class ChatBot {
         this.settings = JSON.parse(localStorage.getItem('chatSettings')) || {
             theme: 'light', // Always use light theme
             model: 'gpt-3.5-turbo',
-            voiceEnabled: false,
+            voiceEnabled: true, // Enable voice by default
             autoSpeak: false,
             language: 'en-US',
             customPrompt: ''
@@ -94,21 +94,8 @@ class ChatBot {
         const voiceBtn = document.getElementById('voice-record-btn');
         if (voiceBtn) voiceBtn.addEventListener('click', () => this.toggleVoiceRecording());
         
-        // Quick action buttons
-        document.querySelectorAll('.quick-action-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const action = e.currentTarget.dataset.action;
-                this.handleQuickAction(action);
-            });
-        });
-        
         // Enhanced message composer features
         this.setupMessageComposer();
-        
-        // Quick actions
-        document.querySelectorAll('.quick-action-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.executeQuickAction(e.target.dataset.action));
-        });
         
         // Export functionality
         const exportBtn = document.getElementById('export-btn');
@@ -883,7 +870,12 @@ class ChatBot {
         const voiceInputBtn = document.getElementById('voice-input-btn');
         const voiceOutputBtn = document.getElementById('voice-output-btn');
         
-        if (voiceBtn) voiceBtn.style.display = 'none';
+        // Keep the voice button visible but show it's not working
+        if (voiceBtn) {
+            voiceBtn.style.opacity = '0.6';
+            voiceBtn.title = 'Voice recognition not supported in this browser. Try Chrome, Edge, or Safari.';
+            // Don't disable it - let the user click and get a helpful message
+        }
         if (voiceInputBtn) voiceInputBtn.style.opacity = '0.5';
         if (voiceOutputBtn) voiceOutputBtn.style.opacity = '0.5';
     }
@@ -895,15 +887,20 @@ class ChatBot {
             return;
         }
         
-        // Check if voice is enabled in settings
+        // Auto-enable voice if user clicks the button
         if (!this.settings.voiceEnabled) {
-            this.showNotification('Voice input is disabled. Enable it in settings first.', 'info');
-            return;
+            this.settings.voiceEnabled = true;
+            this.saveSettings();
+            this.showNotification('Voice input enabled!', 'success');
         }
 
+        // If recognition isn't set up yet, set it up
         if (!this.recognition) {
-            this.showNotification('Speech recognition not initialized. Please try refreshing the page.', 'error');
-            return;
+            this.setupVoice();
+            if (!this.recognition) {
+                this.showNotification('Speech recognition setup failed. Please try refreshing the page.', 'error');
+                return;
+            }
         }
 
         if (this.isRecording) {
@@ -1261,34 +1258,7 @@ class ChatBot {
         }
     }
 
-    handleQuickAction(action) {
-        const userInput = document.getElementById('user-input');
-        if (!userInput) return;
 
-        let promptText = '';
-        switch(action) {
-            case 'explain':
-                promptText = 'Please explain: ';
-                break;
-            case 'summarize':
-                promptText = 'Please summarize this: ';
-                break;
-            case 'translate':
-                promptText = 'Translate this to English: ';
-                break;
-            case 'creative':
-                promptText = 'Write a creative story about: ';
-                break;
-            case 'analyze':
-                promptText = 'Analyze this data or information: ';
-                break;
-        }
-
-        userInput.value = promptText;
-        userInput.focus();
-        userInput.setSelectionRange(userInput.value.length, userInput.value.length);
-        this.updateSendButtonState();
-    }
 
     insertMathFormula() {
         const userInput = document.getElementById('user-input');
@@ -1334,31 +1304,7 @@ class ChatBot {
         }
     }
 
-    executeQuickAction(action) {
-        const chatInput = document.getElementById('user-input');
-        if (!chatInput) return;
 
-        const actions = {
-            'explain': 'Please explain this in detail:',
-            'summarize': 'Please summarize this text:',
-            'translate': 'Please translate this text:',
-            'code': 'Help me debug this code:',
-            'creative': 'Help me with creative writing:',
-            'math': 'Help me solve this math problem:',
-            'write': 'Help me write:',
-            'analyze': 'Please analyze this data:',
-            'research': 'Help me research information about:',
-            'review': 'Please review and edit this text:',
-            'plan': 'Help me create a plan for:',
-            'learn': 'Teach me about:'
-        };
-
-        if (actions[action]) {
-            chatInput.value = actions[action] + ' ';
-            chatInput.focus();
-            this.updateSendButtonState();
-        }
-    }
 
     setupContextMenu() {
         document.addEventListener('contextmenu', (e) => {

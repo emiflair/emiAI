@@ -16,12 +16,40 @@ A modern, responsive AI chatbot with beautiful light/dark themes, voice capabili
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Docker (Recommended) 🐳
 
+**Prerequisites:**
+- Docker and Docker Compose
+
+**Installation:**
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/emiflair/emiAI.git
+   cd emiAI
+   ```
+
+2. **Run the automated setup**
+   ```bash
+   ./docker-setup.sh
+   ```
+
+3. **Add your OpenAI API key**
+   - The script will create `config.js` from the template
+   - Edit `config.js` and add your OpenAI API key
+   - Run `./docker-setup.sh` again
+
+4. **Access your chatbot**
+   ```
+   http://localhost:3000
+   ```
+
+### Option 2: Manual Installation
+
+**Prerequisites:**
 - Node.js (v14 or higher)
 - npm or yarn
 
-### Installation
+**Installation:**
 
 1. **Clone the repository**
    ```bash
@@ -57,8 +85,6 @@ A modern, responsive AI chatbot with beautiful light/dark themes, voice capabili
    ```
    http://localhost:3000
    ```
-
-That's it! The chatbot should now be running locally.
 
 ## 📋 Project Structure
 
@@ -151,6 +177,37 @@ The chatbot is fully responsive and works great on:
 - HTTPS ready for production
 
 ## 🚀 Deployment
+
+### Docker Deployment 🐳
+
+#### Development/Testing
+```bash
+# Build and run locally
+docker-compose up --build
+
+# Run in background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop containers
+docker-compose down
+```
+
+#### Production Deployment
+```bash
+# Build for production
+docker build -t emiai-chatbot:latest .
+
+# Run with custom configuration
+docker run -d \
+  --name emiai-chatbot \
+  -p 3000:3000 \
+  -v $(pwd)/config.js:/app/config.js:ro \
+  --restart unless-stopped \
+  emiai-chatbot:latest
+```
 
 ### Local Network Access
 The server automatically provides local network access:

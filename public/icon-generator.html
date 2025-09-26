@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Generator</title>
+    <style>
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="icon-canvas-192" width="192" height="192"></canvas>
+    <canvas id="icon-canvas-512" width="512" height="512"></canvas>
+    <br>
+    <button onclick="downloadIcons()">Download Icons</button>
+    
+    <script>
+        function createIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Background circle - black
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Scale factor for different sizes
+            const scale = size / 192;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            
+            // Set white color for icon elements
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3 * scale;
+            
+            // Microphone body (rounded rectangle)
+            const micWidth = 24 * scale;
+            const micHeight = 40 * scale;
+            const micX = centerX - micWidth/2;
+            const micY = centerY - micHeight/2 - 10 * scale;
+            
+            ctx.beginPath();
+            ctx.roundRect(micX, micY, micWidth, micHeight, 12 * scale);
+            ctx.fill();
+            
+            // Microphone stand
+            const standWidth = 4 * scale;
+            const standHeight = 20 * scale;
+            ctx.fillRect(centerX - standWidth/2, centerY + 15 * scale, standWidth, standHeight);
+            
+            // Microphone base
+            const baseWidth = 30 * scale;
+            const baseHeight = 4 * scale;
+            ctx.beginPath();
+            ctx.roundRect(centerX - baseWidth/2, centerY + 33 * scale, baseWidth, baseHeight, 2 * scale);
+            ctx.fill();
+            
+            // Sound waves (left)
+            ctx.beginPath();
+            ctx.arc(centerX - 35 * scale, centerY - 5 * scale, 15 * scale, -Math.PI/3, Math.PI/3, false);
+            ctx.stroke();
+            
+            // Sound waves (right)
+            ctx.beginPath();
+            ctx.arc(centerX + 35 * scale, centerY - 5 * scale, 15 * scale, 2*Math.PI/3, 4*Math.PI/3, false);
+            ctx.stroke();
+            
+            // emyAI text
+            ctx.font = `bold ${16 * scale}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('emyAI', centerX, centerY + 55 * scale);
+        }
+        
+        function downloadIcons() {
+            // Create 192x192 icon
+            const canvas192 = document.getElementById('icon-canvas-192');
+            createIcon(canvas192, 192);
+            
+            // Create 512x512 icon  
+            const canvas512 = document.getElementById('icon-canvas-512');
+            createIcon(canvas512, 512);
+            
+            // Download 192x192
+            const link192 = document.createElement('a');
+            link192.download = 'emyai-icon-192.png';
+            link192.href = canvas192.toDataURL();
+            link192.click();
+            
+            // Download 512x512
+            const link512 = document.createElement('a');
+            link512.download = 'emyai-icon-512.png';
+            link512.href = canvas512.toDataURL();
+            link512.click();
+        }
+        
+        // Generate icons on page load
+        window.onload = function() {
+            createIcon(document.getElementById('icon-canvas-192'), 192);
+            createIcon(document.getElementById('icon-canvas-512'), 512);
+        };
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
-  "name": "emyAI - AI Assistant",
+  "name": "emyAI - Voice AI Assistant",
   "short_name": "emyAI",
-  "description": "Advanced AI-powered chat assistant with modern interface",
+  "description": "Advanced voice-enabled AI chat assistant with modern interface",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,19 +9,35 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "chat.png",
+      "src": "emyai-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "chat.png",
+      "src": "emyai-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "emyai-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "categories": ["productivity", "utilities"],
+  "categories": ["productivity", "utilities", "entertainment"],
   "lang": "en",
-  "scope": "/"
+  "scope": "/",
+  "id": "emyai-app",
+  "shortcuts": [
+    {
+      "name": "New Chat",
+      "short_name": "Chat",
+      "description": "Start a new conversation with emyAI",
+      "url": "/",
+      "icons": [{ "src": "emyai-icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

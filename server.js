@@ -14,6 +14,15 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Health check endpoint for Docker
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'healthy', 
+        timestamp: new Date().toISOString(),
+        service: 'emiAI-chatbot'
+    });
+});
+
 app.post('/getChatbotResponse', async (req, res) => {
     try {
         const { userMessage, hasImage, imageData, selectedModel } = req.body;
