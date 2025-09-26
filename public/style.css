@@ -938,7 +938,8 @@ html, body {
 .chat-container {
     width: 100%;
     max-width: 1000px;
-    height: 85vh;
+    height: 100%;
+    flex: 1;
     background: var(--bg-primary);
     border-radius: 30px;
     box-shadow: var(--shadow-lg);
@@ -947,6 +948,7 @@ html, body {
     overflow: hidden;
     border: 3px solid var(--border-medium);
     transition: all 0.3s ease;
+    margin: 0;
     /* Fallback visibility */
     background: #ffffff !important;
     border: 3px solid #ffffff !important;
