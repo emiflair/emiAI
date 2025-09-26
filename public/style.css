@@ -1527,6 +1527,11 @@ html, body {
         color: var(--text-light) !important;
     }
     
+    /* INPUT ACTIONS - VERY TIGHT SPACING ON MOBILE */
+    .input-actions {
+        gap: 1px !important; /* Almost touching buttons on mobile */
+    }
+    
     /* ACTION BUTTONS - BIGGER TOUCH TARGETS */
     .attachment-btn, .send-btn, .voice-record-btn {
         width: 44px !important;
@@ -2184,6 +2189,11 @@ html, body {
         width: 32px;
         height: 32px;
         font-size: 14px;
+    }
+    
+    /* INPUT ACTIONS - NO GAP ON SMALL MOBILE */
+    .input-actions {
+        gap: 0px !important; /* No gap - buttons touching on small screens */
     }
     
     /* Keep attachment and input buttons visible with proper sizing */
